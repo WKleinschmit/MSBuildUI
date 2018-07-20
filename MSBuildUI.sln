@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.27703.2035
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSBuildUI", "MSBuildUI\MSBuildUI.csproj", "{5DEB4E20-542A-40A5-93B1-B5295FA09819}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSBuildObjects", "MSBuildObjects\MSBuildObjects.csproj", "{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5DEB4E20-542A-40A5-93B1-B5295FA09819}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5DEB4E20-542A-40A5-93B1-B5295FA09819}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5DEB4E20-542A-40A5-93B1-B5295FA09819}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5DEB4E20-542A-40A5-93B1-B5295FA09819}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {3AE34144-5ACB-4C0A-BE72-8F11C426A04C}
+	EndGlobalSection
+EndGlobal

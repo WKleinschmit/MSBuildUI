@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<AxialisIconCollection>
+  <Name>MSBuildUI</Name>
+  <Icon>
+    <Name>collection-new</Name>
+    <StockIconName>document-red-landscape.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName>new.axvi</StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>100</ResourceIDValue>
+    <ResourceID>ID_COLLECTION-NEW</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>solution-add</Name>
+    <StockIconName>document-magenta.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName>add.axvi</StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>101</ResourceIDValue>
+    <ResourceID>ID_SOLUTION-ADD</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>collection-open</Name>
+    <StockIconName>document-red-landscape.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName>open.axvi</StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>102</ResourceIDValue>
+    <ResourceID>ID_COLLECTION-OPEN</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>collection-save</Name>
+    <StockIconName>save.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName></StockOverlayName>
+    <StockOverlayPos>32</StockOverlayPos>
+    <ResourceIDValue>103</ResourceIDValue>
+    <ResourceID>ID_COLLECTION-SAVE</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>collection-save-as</Name>
+    <StockIconName>save.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName>edit.axvi</StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>104</ResourceIDValue>
+    <ResourceID>ID_COLLECTION-SAVE-AS</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>application-exit</Name>
+    <StockIconName>application.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName>forbidden.axvi</StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>105</ResourceIDValue>
+    <ResourceID>ID_APPLICATION-EXIT</ResourceID>
+  </Icon>
+</AxialisIconCollection>

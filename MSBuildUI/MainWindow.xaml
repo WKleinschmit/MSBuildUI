@@ -1,0 +1,69 @@
+﻿<igRibbon:XamRibbonWindow x:Class="MSBuildUI.MainWindow"
+                          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                          xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                          xmlns:local="clr-namespace:MSBuildUI"
+                          xmlns:igRibbon="http://infragistics.com/Ribbon"
+                          xmlns:igDock="http://infragistics.com/DockManager"
+                          mc:Ignorable="d"
+                          Title="MainWindow"
+                          Height="450"
+                          Width="800">
+    <igRibbon:XamRibbonWindow.DataContext>
+        <local:MainWindowViewModel />
+    </igRibbon:XamRibbonWindow.DataContext>
+    <igRibbon:RibbonWindowContentHost Theme="Scenic">
+        <igRibbon:RibbonWindowContentHost.Ribbon>
+            <igRibbon:XamRibbon ApplicationMenuMode="Office2007">
+                <igRibbon:XamRibbon.ApplicationMenu>
+                    <igRibbon:ApplicationMenu RecentItemsHeader="{x:Static local:MainWindowRes.recentFiles}"
+                                              Caption="{x:Static local:MainWindowRes.file}">
+                        <igRibbon:ApplicationMenu.FooterToolbar>
+                            <igRibbon:ApplicationMenuFooterToolbar>
+                                <igRibbon:ButtonTool Command="{Binding ExitCommand}"
+                                                     Content="{x:Static local:MainWindowRes.cmdExit}"
+                                                     LargeImage="img/application-exit@32px.png"
+                                                     SmallImage="img/application-exit@16px.png" />
+                            </igRibbon:ApplicationMenuFooterToolbar>
+                        </igRibbon:ApplicationMenu.FooterToolbar>
+                        <igRibbon:ButtonTool Command="{Binding NewCollectionCommand}"
+                                             Content="{x:Static local:MainWindowRes.cmdNewCollection}"
+                                             LargeImage="img/collection-new@32px.png"
+                                             SmallImage="img/collection-new@16px.png" />
+                        <igRibbon:ButtonTool Command="{Binding OpenCollectionCommand}"
+                                             Content="{x:Static local:MainWindowRes.cmdOpenCollection}"
+                                             LargeImage="img/collection-open@32px.png"
+                                             SmallImage="img/collection-open@16px.png" />
+                        <igRibbon:ButtonTool Command="{Binding SaveCollectionCommand}"
+                                             Content="{x:Static local:MainWindowRes.cmdSaveCollection}"
+                                             LargeImage="img/collection-save@32px.png"
+                                             SmallImage="img/collection-save@16px.png" />
+                        <igRibbon:ButtonTool Command="{Binding SaveCollectionAsCommand}"
+                                             Content="{x:Static local:MainWindowRes.cmdSaveCollectionAs}"
+                                             LargeImage="img/collection-save-as@32px.png"
+                                             SmallImage="img/collection-save-as@16px.png" />
+                    </igRibbon:ApplicationMenu>
+                </igRibbon:XamRibbon.ApplicationMenu>
+                <igRibbon:XamRibbon.Tabs>
+                    <igRibbon:RibbonTabItem Header="{x:Static local:MainWindowRes.home}">
+                        <igRibbon:RibbonGroup>
+                            <igRibbon:ButtonTool Command="{Binding AddSolutionCommand}"
+                                                 Content="{x:Static local:MainWindowRes.cmdAddSolution}"
+                                                 igRibbon:RibbonGroup.MaximumSize="ImageAndTextLarge"
+                                                 LargeImage="img/solution-add@32px.png"
+                                                 SmallImage="img/solution-add@16px.png" />
+                        </igRibbon:RibbonGroup>
+                    </igRibbon:RibbonTabItem>
+                </igRibbon:XamRibbon.Tabs>
+            </igRibbon:XamRibbon>
+        </igRibbon:RibbonWindowContentHost.Ribbon>
+        <igDock:XamDockManager x:Name="XamDockManager">
+            <igDock:DocumentContentHost>
+                <igDock:SplitPane>
+                    <igDock:TabGroupPane></igDock:TabGroupPane>
+                </igDock:SplitPane>
+            </igDock:DocumentContentHost>
+        </igDock:XamDockManager>
+    </igRibbon:RibbonWindowContentHost>
+</igRibbon:XamRibbonWindow>
