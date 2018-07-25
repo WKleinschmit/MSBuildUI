@@ -67,6 +67,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Collections\SolutionCollection.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="MainWindowRes.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -142,6 +143,12 @@
   <ItemGroup>
     <Resource Include="img\solution-add%4016px.png" />
     <Resource Include="img\solution-add%4032px.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MSBuildObjects\MSBuildObjects.csproj">
+      <Project>{eb6dd4a4-6a7d-41c8-90fb-874aadb55d91}</Project>
+      <Name>MSBuildObjects</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Fody.3.1.3\build\Fody.targets" Condition="Exists('..\packages\Fody.3.1.3\build\Fody.targets')" />

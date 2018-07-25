@@ -1,8 +1,10 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Xml;
 using System.Xml.Linq;
+using MSBuildObjects;
 using MSBuildUI.Annotations;
 using Ookii.Dialogs.Wpf;
 using R = MSBuildUI.Properties.Resources;
@@ -93,6 +95,8 @@ namespace MSBuildUI.Collections
             Title = Path.GetFileNameWithoutExtension(Filename);
             return true;
         }
+
+        public ObservableCollection<Solution> Solutions { get; } = new ObservableCollection<Solution>();
 
         #region INotifyPropertyChanged
 

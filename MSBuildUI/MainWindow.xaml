@@ -7,9 +7,7 @@
                           xmlns:igRibbon="http://infragistics.com/Ribbon"
                           xmlns:igDock="http://infragistics.com/DockManager"
                           mc:Ignorable="d"
-                          Title="MainWindow"
-                          Height="450"
-                          Width="800">
+                          Title="{Binding Title}">
     <igRibbon:XamRibbonWindow.DataContext>
         <local:MainWindowViewModel />
     </igRibbon:XamRibbonWindow.DataContext>

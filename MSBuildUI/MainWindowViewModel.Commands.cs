@@ -5,7 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using MSBuildObjects;
 using MSBuildUI.Collections;
+using Ookii.Dialogs.Wpf;
 using R = MSBuildUI.Properties.Resources;
 
 namespace MSBuildUI
@@ -31,7 +33,14 @@ namespace MSBuildUI
 
         private void OnAddSolution(object obj)
         {
+            VistaOpenFileDialog ofd = new VistaOpenFileDialog();
+            ofd.AddFilter("sln");
+            bool? result = ofd.ShowDialog(_mainWindow);
+            if (!result.HasValue || !result.Value)
+                return;
 
+            Solution solution = Solution.OpenSolution(ofd.FileName);
+            SolutionCollection.Solutions.Add(solution);
         }
 
         private void OnSaveCollectionAs(object obj)
