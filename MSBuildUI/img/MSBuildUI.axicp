@@ -2,6 +2,16 @@
 <AxialisIconCollection>
   <Name>MSBuildUI</Name>
   <Icon>
+    <Name>output</Name>
+    <StockIconName>document-gray-text.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName></StockOverlayName>
+    <StockOverlayPos>32</StockOverlayPos>
+    <ResourceIDValue>106</ResourceIDValue>
+    <ResourceID>ID_DOCUMENT-GRAY-TEXT</ResourceID>
+  </Icon>
+  <Icon>
     <Name>collection-new</Name>
     <StockIconName>document-red-landscape.axvi</StockIconName>
     <StockIconFamily>Axialis Flat Design</StockIconFamily>

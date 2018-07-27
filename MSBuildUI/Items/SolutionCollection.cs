@@ -9,32 +9,28 @@ using MSBuildUI.Annotations;
 using Ookii.Dialogs.Wpf;
 using R = MSBuildUI.Properties.Resources;
 
-namespace MSBuildUI.Collections
+namespace MSBuildUI.Items
 {
     public class SolutionCollection : INotifyPropertyChanged
     {
         private static int counter = 0;
 
-        private SolutionCollection()
+        internal SolutionCollection()
         {
-
         }
 
         public string Title { get; private set; }
         public string Filename { get; private set; }
         public bool Modified { get; private set; } = false;
 
-        public static SolutionCollection CreateNew()
+        public void CreateNew()
         {
-            SolutionCollection solutionCollection = new SolutionCollection
-            {
-                Title = string.Format(R.solutionCollection, ++counter),
-                Filename = null,
-            };
-            return solutionCollection;
+            Solutions.Clear();
+            Title = string.Format(R.solutionCollection, ++counter);
+            Filename = null;
         }
 
-        public static SolutionCollection OpenExisting(string filename)
+        public void OpenExisting(string filename)
         {
             if (filename == null)
             {
@@ -47,20 +43,27 @@ namespace MSBuildUI.Collections
 
                 bool? result = ofd.ShowDialog();
                 if (!result.HasValue || !result.Value)
-                    return null;
+                    return;
 
                 filename = ofd.FileName;
             }
 
             XDocument doc = XDocument.Load(filename);
 
-            SolutionCollection solutionCollection = new SolutionCollection
-            {
-                Title = Path.GetFileNameWithoutExtension(filename),
-                Filename = filename,
-            };
+            if (!(doc.Root is XElement eltSolutionCollection))
+                return;
 
-            return solutionCollection;
+            Solutions.Clear();
+            Title = Path.GetFileNameWithoutExtension(filename);
+            Filename = filename;
+
+            foreach (XElement eltSolution in eltSolutionCollection.Elements("Solution"))
+            {
+                Solution solution = Solution.OpenSolution(eltSolution.Attribute("filename")?.Value);
+                SolutionItem solutionItem = AddSolution(solution);
+                solutionItem.IsActive = bool.Parse(eltSolution.Attribute("isActive")?.Value ?? "true");
+                solutionItem.SelectedConfiguration = eltSolution.Attribute("selectedConfiguration")?.Value;
+            }
         }
 
         public bool Save()
@@ -72,6 +75,11 @@ namespace MSBuildUI.Collections
 
             XElement eltSolutionCollection = new XElement("SolutionCollection");
             doc.Add(eltSolutionCollection);
+
+            foreach (SolutionItem solutionItem in Solutions)
+            {
+                solutionItem.Save(eltSolutionCollection);
+            }
 
             using (XmlWriter xmlWriter = XmlWriter.Create(Filename, new XmlWriterSettings { Indent = true }))
                 doc.WriteTo(xmlWriter);
@@ -85,18 +93,19 @@ namespace MSBuildUI.Collections
             {
                 Title = R.saveAsTitle,
                 Filter = R.saveAsFilter,
+                DefaultExt = "slncoll",
             };
 
             bool? result = sfd.ShowDialog();
-            if (!result.HasValue || !result.Value || !Save())
+            if (!result.HasValue || !result.Value)
                 return false;
 
             Filename = sfd.FileName;
             Title = Path.GetFileNameWithoutExtension(Filename);
-            return true;
+            return Save();
         }
 
-        public ObservableCollection<Solution> Solutions { get; } = new ObservableCollection<Solution>();
+        public ObservableCollection<SolutionItem> Solutions { get; } = new ObservableCollection<SolutionItem>();
 
         #region INotifyPropertyChanged
 
@@ -109,5 +118,12 @@ namespace MSBuildUI.Collections
         }
 
         #endregion
+
+        public SolutionItem AddSolution(Solution solution)
+        {
+            SolutionItem solutionItem = new SolutionItem(solution);
+            Solutions.Add(solutionItem);
+            return solutionItem;
+        }
     }
 }

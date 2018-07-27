@@ -1,7 +1,7 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using MSBuildUI.Annotations;
-using MSBuildUI.Collections;
+using MSBuildUI.Items;
 using R = MSBuildUI.Properties.Resources;
 
 namespace MSBuildUI
@@ -13,7 +13,11 @@ namespace MSBuildUI
         public MainWindowViewModel()
         {
             InitCommands();
-            SolutionCollection = SolutionCollection.CreateNew();
+#if DEBUG
+            SolutionCollection.OpenExisting(@"d:\Depot\ESPRIT\Source\Fact.Nt\AllEsprit.slncoll");
+#else
+            SolutionCollection.CreateNew();
+#endif
             SolutionCollection.PropertyChanged += (sender, args) =>
             {
                 if (args.PropertyName == nameof(SolutionCollection.Modified))
@@ -27,7 +31,7 @@ namespace MSBuildUI
             };
         }
 
-        public SolutionCollection SolutionCollection { get; private set; }
+        public SolutionCollection SolutionCollection { get; } = new SolutionCollection();
 
         public void SetMainWindow(MainWindow mainWindow)
         {

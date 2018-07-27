@@ -1,9 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Mail;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Windows.Media;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.XPath;
 
 namespace MSBuildObjects
 {
@@ -12,6 +16,26 @@ namespace MSBuildObjects
         private const string SolutionFileHeader = @"Microsoft Visual Studio Solution File, Format Version ";
 
         private const string VSTag = @"# Visual Studio ";
+
+        class NSResolv : IXmlNamespaceResolver
+        {
+            private const string NSMsbuild = @"http://schemas.microsoft.com/developer/msbuild/2003";
+
+            public IDictionary<string, string> GetNamespacesInScope(XmlNamespaceScope scope)
+            {
+                throw new NotImplementedException();
+            }
+
+            public string LookupNamespace(string prefix)
+            {
+                return prefix == "p" ? NSMsbuild : null;
+            }
+
+            public string LookupPrefix(string namespaceName)
+            {
+                return namespaceName == NSMsbuild ? "p" : null;
+            }
+        }
 
         private static readonly Guid FolderGuid = new Guid("{2150E333-8FDC-42A3-9474-1A3956D46DE8}");
 
@@ -31,8 +55,8 @@ namespace MSBuildObjects
             @"GlobalSection\((?<Name>[a-z]+)\)\s*=\s*.*",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        private static readonly Regex rxGuidEqGuid = new Regex(
-            @"(?<Guid1>{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}})\s*=\s*(?<Guid2>{[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}})",
+        private static readonly Regex rxValueEqValue = new Regex(
+            @"(?<Value1>\S+)\s*=\s*(?<Value2>\S+)",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
         private static readonly Dictionary<string, MethodInfo> _SectionHandlers = new Dictionary<string, MethodInfo>();
@@ -44,7 +68,7 @@ namespace MSBuildObjects
             {
                 methodInfo = _SectionHandlers[name] = typeof(Solution).GetMethod(name,
                     BindingFlags.Static | BindingFlags.NonPublic, null,
-                    new[] { typeof(Solution), typeof(Project), typeof(TextReader) },
+                    new[] { typeof(Solution), typeof(_SolutionItem), typeof(TextReader) },
                     null);
             }
 
@@ -65,12 +89,24 @@ namespace MSBuildObjects
             return methodInfo != null || FindGlobalSectionHandler("", out methodInfo);
         }
 
+        public Solution()
+        : this(@"d:\Depot\ESPRIT\Source\Fact.Nt\EspritDotNetModules_PreESPRITBuild.sln")
+        {
+
+        }
+
         private Solution(string filename)
         {
             Filename = Path.GetFullPath(filename);
             Directory = Path.GetDirectoryName(Filename);
             Title = Path.GetFileNameWithoutExtension(Filename);
+
+            Icon32 = _SolutionItem.GetIcon(".sln", IconExtensions.IconSize.Large);
+            Icon16 = _SolutionItem.GetIcon(".sln", IconExtensions.IconSize.Small);
         }
+
+        public ImageSource Icon32 { get; }
+        public ImageSource Icon16 { get; }
 
         public string Filename { get; }
         public string Directory { get; }
@@ -81,16 +117,38 @@ namespace MSBuildObjects
         private Dictionary<string, string> _Properties { get; } = new Dictionary<string, string>();
         public IReadOnlyDictionary<string, string> Properties => _Properties;
 
-        private Dictionary<Guid, _SolutionItem> _SolutionItems { get; } = new Dictionary<Guid, _SolutionItem>();
+        private Dictionary<Guid, _SolutionItem> _SolutionItemsDict { get; } = new Dictionary<Guid, _SolutionItem>();
+
+        private List<_SolutionItem> _SolutionItems { get; } = new List<_SolutionItem>();
+        public IReadOnlyList<_SolutionItem> SolutionItems => _SolutionItems;
+
+        private List<Project> _Projects { get; } = new List<Project>();
+        public IReadOnlyList<Project> Projects => _Projects;
+
+        private HashSet<string> _SolutionConfigurationPlatforms { get; } = new HashSet<string>();
+        public IReadOnlyCollection<string> SolutionConfigurationPlatforms => _SolutionConfigurationPlatforms;
+
+        private HashSet<string> _ProjectConfigurationPlatforms { get; } = new HashSet<string>();
+        public IReadOnlyCollection<string> ProjectConfigurationPlatforms => _ProjectConfigurationPlatforms;
 
         private Project FindProject(Guid guid)
         {
-            if (_SolutionItems.TryGetValue(guid, out _SolutionItem solutionItem) && solutionItem is Project project)
+            if (_SolutionItemsDict.TryGetValue(guid, out _SolutionItem solutionItem) && solutionItem is Project project)
                 return project;
 
             project = new Project(this, guid);
-            _SolutionItems.Add(guid, project);
+            _SolutionItemsDict.Add(guid, project);
             return project;
+        }
+
+        private ProjectFolder FindProjectFolder(Guid guid)
+        {
+            if (_SolutionItemsDict.TryGetValue(guid, out _SolutionItem solutionItem) && solutionItem is ProjectFolder projectFolder)
+                return projectFolder;
+
+            projectFolder = new ProjectFolder(this, guid);
+            _SolutionItemsDict.Add(guid, projectFolder);
+            return projectFolder;
         }
 
         public static Solution OpenSolution(string filename)
@@ -114,6 +172,20 @@ namespace MSBuildObjects
                     throw new ParseException("Solution file header not found.");
                 }
             }
+
+            solution._SolutionItems.AddRange(solution._SolutionItemsDict.Values.Where(si => si.Parent == null));
+            solution._SolutionItems.Sort((a, b) =>
+            {
+                if (a is Project && b is Project)
+                    return string.Compare(a.Name, b.Name, StringComparison.InvariantCulture);
+                if (a is ProjectFolder && b is ProjectFolder)
+                    return string.Compare(a.Name, b.Name, StringComparison.InvariantCulture);
+
+                return (a is ProjectFolder) ? -1 : 1;
+            });
+
+            solution._Projects.AddRange(solution._SolutionItemsDict.Values.OfType<Project>());
+            solution._Projects.Sort(((a, b) => string.Compare(a.Name, b.Name, StringComparison.InvariantCulture)));
 
             return solution;
         }
@@ -157,6 +229,8 @@ namespace MSBuildObjects
             }
         }
 
+        #region ParseGlobal
+
         private static void ParseGlobal(Solution solution, TextReader textReader)
         {
             for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
@@ -176,10 +250,11 @@ namespace MSBuildObjects
 
                 throw new ParseException($"Unexpected line: {line}");
             }
-            throw new ParseException($"Unexpected end of file");
+            throw new ParseException("Unexpected end of file");
         }
 
         // ReSharper disable UnusedMember.Local
+        // ReSharper disable UnusedParameter.Local
         private static void ParseGlobalSection_(Solution solution, TextReader textReader)
         {
             for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
@@ -187,8 +262,9 @@ namespace MSBuildObjects
                 if (line == "EndGlobalSection")
                     return;
             }
-            throw new ParseException($"Unexpected end of file");
+            throw new ParseException("Unexpected end of file");
         }
+        // ReSharper restore UnusedParameter.Local
 
         private static void ParseGlobalSection_SolutionConfigurationPlatforms(Solution solution, TextReader textReader)
         {
@@ -196,32 +272,102 @@ namespace MSBuildObjects
             {
                 if (line == "EndGlobalSection")
                     return;
+
+                Match M = rxValueEqValue.Match(line);
+                if (!M.Success)
+                    throw new ParseException($"Unexpected line: {line}");
+
+                solution._SolutionConfigurationPlatforms.Add(M.Groups["Value1"].Value);
             }
-            throw new ParseException($"Unexpected end of file");
+            throw new ParseException("Unexpected end of file");
+        }
+
+        private static void ParseGlobalSection_ProjectConfigurationPlatforms(Solution solution, TextReader textReader)
+        {
+            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
+            {
+                if (line == "EndGlobalSection")
+                    return;
+
+                Match M = rxValueEqValue.Match(line);
+                if (!M.Success)
+                    throw new ParseException($"Unexpected line: {line}");
+
+                solution._ProjectConfigurationPlatforms.Add($"{M.Groups["Value1"].Value}={M.Groups["Value2"].Value}");
+            }
+            throw new ParseException("Unexpected end of file");
+        }
+
+        private static void ParseGlobalSection_SolutionProperties(Solution solution, TextReader textReader)
+        {
+            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
+            {
+                if (line == "EndGlobalSection")
+                    return;
+
+                Match M = rxValueEqValue.Match(line);
+                if (!M.Success)
+                    throw new ParseException($"Unexpected line: {line}");
+
+                solution._Properties.Add(M.Groups["Value1"].Value, M.Groups["Value2"].Value);
+            }
+            throw new ParseException("Unexpected end of file");
+        }
+
+        private static void ParseGlobalSection_NestedProjects(Solution solution, TextReader textReader)
+        {
+            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
+            {
+                if (line == "EndGlobalSection")
+                    return;
+
+                Match M = rxValueEqValue.Match(line);
+                if (!M.Success)
+                    throw new ParseException($"Unexpected line: {line}");
+
+                Guid guidChild = new Guid(M.Groups["Value1"].Value);
+                Guid guidParent = new Guid(M.Groups["Value2"].Value);
+
+                if (!solution._SolutionItemsDict.TryGetValue(guidChild, out _SolutionItem child))
+                    continue;
+
+                if (!solution._SolutionItemsDict.TryGetValue(guidParent, out _SolutionItem solutionItem)
+                || !(solutionItem is ProjectFolder parent))
+                    continue;
+
+                parent.AddChild(child);
+            }
+            throw new ParseException("Unexpected end of file");
+        }
+
+        private static void ParseGlobalSection_ExtensibilityGlobals(Solution solution, TextReader textReader)
+        {
+            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
+            {
+                if (line == "EndGlobalSection")
+                    return;
+
+                Match M = rxValueEqValue.Match(line);
+                if (!M.Success)
+                    throw new ParseException($"Unexpected line: {line}");
+
+                solution._Properties.Add(M.Groups["Value1"].Value, M.Groups["Value2"].Value);
+            }
+            throw new ParseException("Unexpected end of file");
         }
         // ReSharper restore UnusedMember.Local
 
-        #region MyRegion
+        #endregion
+
+        #region ParseProject
 
         private static void ParseProject(Solution solution, TextReader textReader, Guid type, string name, string path, Guid guid)
         {
             if (type == FolderGuid)
             {
-                solution._SolutionItems.Add(guid, new ProjectFolder(solution, name, guid));
-
-                for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
-                {
-                    switch (line)
-                    {
-                        case "":
-                            continue;
-                        case "EndProject":
-                            return;
-                        default:
-                            throw new ParseException($"Unexpected line: {line}");
-                    }
-                }
-                throw new ParseException($"Unexpected end of file");
+                ProjectFolder projectFolder = solution.FindProjectFolder(guid);
+                projectFolder.Name = name;
+                ParseProjectSections(solution, textReader, projectFolder);
             }
             else
             {
@@ -230,55 +376,86 @@ namespace MSBuildObjects
                 project.Type = type;
                 project.Path = Path.GetFullPath(Path.Combine(solution.Directory, path));
 
-                for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
-                {
-                    if (line == "")
-                        continue;
+                XDocument doc = XDocument.Load(project.Path);
+                IEnumerable<XElement> referencedProjects = doc.XPathSelectElements("//p:ProjectReference/p:Project", new NSResolv());
+                foreach (XElement referencedProject in referencedProjects)
+                    project.DependentProjects.Add(solution.FindProject(new Guid(referencedProject.Value)));
 
-                    if (line == "EndProject")
-                        return;
-
-                    Match M = rxProjectSection.Match(line);
-                    if (M.Success && FindProjectSectionHandler(M.Groups["Name"].Value, out MethodInfo sectionHandler))
-                    {
-                        sectionHandler.Invoke(solution, new object[] { solution, project, textReader });
-                        continue;
-                    }
-
-                    throw new ParseException($"Unexpected line: {line}");
-                }
-                throw new ParseException($"Unexpected end of file");
+                ParseProjectSections(solution, textReader, project);
             }
         }
 
-        // ReSharper disable UnusedMember.Local
-        private static void ParseProjectSection_(Solution solution, Project project, TextReader textReader)
+        private static void ParseProjectSections(Solution solution, TextReader textReader, _SolutionItem solutionItem)
         {
             for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
             {
-                if (line == "EndProjectSection")
-                    return;
-            }
-            throw new ParseException($"Unexpected end of file");
-        }
+                if (line == "")
+                    continue;
 
-        private static void ParseProjectSection_ProjectDependencies(Solution solution, Project project, TextReader textReader)
-        {
-            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
-            {
-                if (line == "EndProjectSection")
+                if (line == "EndProject")
                     return;
 
-                Match M = rxGuidEqGuid.Match(line);
-                if (M.Success)
+                Match M = rxProjectSection.Match(line);
+                if (M.Success && FindProjectSectionHandler(M.Groups["Name"].Value, out MethodInfo sectionHandler))
                 {
-                    project.DependentProjects.Add(solution.FindProject(new Guid(M.Groups["Guid1"].Value)));
+                    sectionHandler.Invoke(solution, new object[] { solution, solutionItem, textReader });
                     continue;
                 }
 
                 throw new ParseException($"Unexpected line: {line}");
             }
-            throw new ParseException($"Unexpected end of file");
+            throw new ParseException("Unexpected end of file");
+        }
+
+        // ReSharper disable UnusedMember.Local
+        // ReSharper disable UnusedParameter.Local
+        private static void ParseProjectSection_(Solution solution, _SolutionItem solutionItem, TextReader textReader)
+        {
+            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
+            {
+                if (line == "EndProjectSection")
+                    return;
+            }
+            throw new ParseException("Unexpected end of file");
+        }
+        // ReSharper restore UnusedParameter.Local
+
+        private static void ParseProjectSection_ProjectDependencies(Solution solution, _SolutionItem solutionItem, TextReader textReader)
+        {
+            if (!(solutionItem is Project project))
+                return;
+
+            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
+            {
+                if (line == "EndProjectSection")
+                    return;
+
+                Match M = rxValueEqValue.Match(line);
+                if (!M.Success)
+                    throw new ParseException($"Unexpected line: {line}");
+
+                project.DependentProjects.Add(solution.FindProject(new Guid(M.Groups["Value1"].Value)));
+            }
+            throw new ParseException("Unexpected end of file");
+        }
+
+        private static void ParseProjectSection_SolutionItems(Solution solution, _SolutionItem solutionItem, TextReader textReader)
+        {
+            if (!(solutionItem is ProjectFolder projectFolder))
+                return;
+
+            for (string line = textReader.ReadLine()?.Trim(); line != null; line = textReader.ReadLine()?.Trim())
+            {
+                if (line == "EndProjectSection")
+                    return;
+
+                Match M = rxValueEqValue.Match(line);
+                if (!M.Success)
+                    throw new ParseException($"Unexpected line: {line}");
+
+                projectFolder.AddChild(new SolutionItem(solution, M.Groups["Value1"].Value));
+            }
+            throw new ParseException("Unexpected end of file");
         }
         // ReSharper restore UnusedMember.Local
 

@@ -5,10 +5,13 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Infragistics.Windows.DockManager;
 using MSBuildObjects;
-using MSBuildUI.Collections;
+using MSBuildUI.Items;
+using MSBuildUI.wpf;
 using Ookii.Dialogs.Wpf;
 using R = MSBuildUI.Properties.Resources;
+using SolutionItem = MSBuildUI.Items.SolutionItem;
 
 namespace MSBuildUI
 {
@@ -40,7 +43,7 @@ namespace MSBuildUI
                 return;
 
             Solution solution = Solution.OpenSolution(ofd.FileName);
-            SolutionCollection.Solutions.Add(solution);
+            SolutionCollection.AddSolution(solution);
         }
 
         private void OnSaveCollectionAs(object obj)
@@ -58,7 +61,7 @@ namespace MSBuildUI
             if (!PromptModified())
                 return;
 
-            SolutionCollection solutionCollection = SolutionCollection.OpenExisting(null);
+            SolutionCollection.OpenExisting(null);
         }
 
         private void OnNewCollection(object obj)
@@ -67,7 +70,7 @@ namespace MSBuildUI
                 return;
 
             if (SolutionCollection.Filename != null)
-                SolutionCollection = SolutionCollection.CreateNew();
+                SolutionCollection.CreateNew();
         }
 
         private void OnExit(object obj)
