@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -18,6 +19,15 @@ namespace MSBuildUI
     public partial class MainWindowViewModel : INotifyPropertyChanged
     {
         private MainWindow _mainWindow;
+        private static readonly ImageSource Coll16 = new BitmapImage(new Uri("pack://application:,,,/MSBuildUI;component/img/collection@16px.png"));
+        private static readonly ImageSource Coll32 = new BitmapImage(new Uri("pack://application:,,,/MSBuildUI;component/img/collection@32px.png"));
+        private static readonly string vswherePath;
+
+        static MainWindowViewModel()
+        {
+            vswherePath = Path.GetDirectoryName(Path.GetFullPath(typeof(MainWindowViewModel).Assembly.Location));
+            vswherePath = Path.Combine(vswherePath ?? @".\", "vswhere.exe");
+        }
 
         public MainWindowViewModel()
         {
@@ -51,9 +61,6 @@ namespace MSBuildUI
             if (buttonTool != null)
                 _mainWindow.ApplicationMenu.RecentItems.Remove(buttonTool);
         }
-
-        private static readonly ImageSource Coll16 = new BitmapImage(new Uri("pack://application:,,,/MSBuildUI;component/img/collection@16px.png"));
-        private static readonly ImageSource Coll32 = new BitmapImage(new Uri("pack://application:,,,/MSBuildUI;component/img/collection@32px.png"));
 
         public void AddRecentFile(string path)
         {
@@ -116,6 +123,9 @@ namespace MSBuildUI
 
         private void BuildSolution(SolutionItem solutionItem, string target)
         {
+            string[] parts = solutionItem.SelectedConfiguration.Split("|".ToCharArray(), 2, StringSplitOptions.RemoveEmptyEntries);
+            string pipeName = Guid.NewGuid().ToString("N");
+
             using (new PushDir(solutionItem.Solution.Directory))
             {
                 string tempFileName = Path.GetTempFileName();
@@ -127,12 +137,45 @@ namespace MSBuildUI
                     {
                         textWriter.WriteLine($@"@echo off
 
+set VSWHERE=""{vswherePath}""
+for /f ""usebackq tokens=1,* delims=: "" %%a in (`%VSWHERE% -legacy -latest`) do set ""%%a=%%b""
+
+if exist ""%installationPath%\Common7\Tools\vsdevcmd.bat"" (
+    pushd .
+    if %installationVersion% gtr 15.5 (
+        call ""%installationPath%\Common7\Tools\vsdevcmd.bat"" -vcvars_ver=14.11
+    ) else (
+        call ""%installationPath%\Common7\Tools\vsdevcmd.bat""
+    )
+    popd
+) else (
+    echo Visual Studio installation not found.
+    exit /B 1
+)
+
+msbuild /nologo /n ^
+    ""/target:{target}"" ^
+    ""/property:Configuration={parts[0]}"" ^
+    ""/property:Platform={parts[1]}"" ^
+    ""/logger:RemoteLogger,MSBuildLogging;PipeName={pipeName}"" ^
+    ""{Path.GetFileName(solutionItem.Solution.Filename)}""
 ");
                     }
+
+                    ProcessStartInfo psi = new ProcessStartInfo("cmd.exe")
+                    {
+                        Arguments = $"/C call \"{tempFileName}\"",
+                        UseShellExecute = false,
+                        CreateNoWindow = true,
+                    };
+
+                    Process.Start(psi)?.Dispose();
+
                 }
                 finally
                 {
-                    File.Delete(tempFileName);
+                    if (File.Exists(tempFileName))
+                        File.Delete(tempFileName);
                 }
             }
         }

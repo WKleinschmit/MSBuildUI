@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.IO.Pipes;
@@ -14,6 +15,11 @@ namespace MSBuildLogging
         private BinaryWriter binaryWriter;
         private BuildEventArgsWriter eventArgsWriter;
         private string pipeName;
+
+        public RemoteLogger()
+        {
+            Debugger.Launch();
+        }
 
         public void Initialize(IEventSource eventSource)
         {
