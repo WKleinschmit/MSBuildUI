@@ -70,6 +70,24 @@ namespace MSBuildUI {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Build all.
+        /// </summary>
+        public static string cmdBuild {
+            get {
+                return ResourceManager.GetString("cmdBuild", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Cancel build.
+        /// </summary>
+        public static string cmdCancelBuild {
+            get {
+                return ResourceManager.GetString("cmdCancelBuild", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to E_xit.
         /// </summary>
         public static string cmdExit {
@@ -93,6 +111,15 @@ namespace MSBuildUI {
         public static string cmdOpenCollection {
             get {
                 return ResourceManager.GetString("cmdOpenCollection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Rebuild all.
+        /// </summary>
+        public static string cmdRebuild {
+            get {
+                return ResourceManager.GetString("cmdRebuild", resourceCulture);
             }
         }
         
@@ -129,6 +156,24 @@ namespace MSBuildUI {
         public static string home {
             get {
                 return ResourceManager.GetString("home", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Build.
+        /// </summary>
+        public static string home_Build {
+            get {
+                return ResourceManager.GetString("home_Build", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Edit.
+        /// </summary>
+        public static string home_Edit {
+            get {
+                return ResourceManager.GetString("home_Edit", resourceCulture);
             }
         }
         

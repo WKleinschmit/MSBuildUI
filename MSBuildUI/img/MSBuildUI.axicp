@@ -2,14 +2,54 @@
 <AxialisIconCollection>
   <Name>MSBuildUI</Name>
   <Icon>
+    <Name>collection</Name>
+    <StockIconName>document-red-landscape.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Basic</StockIconSet>
+    <StockOverlayName></StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>111</ResourceIDValue>
+    <ResourceID>ID_DOCUMENT-RED-LANDSCAPE</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>cancel-build</Name>
+    <StockIconName>build-solution.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Development</StockIconSet>
+    <StockOverlayName>cancel.axvi</StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>101</ResourceIDValue>
+    <ResourceID>ID_CANCEL-BUILD</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>rebuild</Name>
+    <StockIconName>build-solution.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Development</StockIconSet>
+    <StockOverlayName>refresh.axvi</StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>102</ResourceIDValue>
+    <ResourceID>ID_REBUILD</ResourceID>
+  </Icon>
+  <Icon>
+    <Name>build</Name>
+    <StockIconName>build-solution.axvi</StockIconName>
+    <StockIconFamily>Axialis Flat Design</StockIconFamily>
+    <StockIconSet>Development</StockIconSet>
+    <StockOverlayName></StockOverlayName>
+    <StockOverlayPos>4</StockOverlayPos>
+    <ResourceIDValue>103</ResourceIDValue>
+    <ResourceID>ID_BUILD</ResourceID>
+  </Icon>
+  <Icon>
     <Name>output</Name>
     <StockIconName>document-gray-text.axvi</StockIconName>
     <StockIconFamily>Axialis Flat Design</StockIconFamily>
     <StockIconSet>Basic</StockIconSet>
     <StockOverlayName></StockOverlayName>
     <StockOverlayPos>32</StockOverlayPos>
-    <ResourceIDValue>106</ResourceIDValue>
-    <ResourceID>ID_DOCUMENT-GRAY-TEXT</ResourceID>
+    <ResourceIDValue>104</ResourceIDValue>
+    <ResourceID>ID_OUTPUT</ResourceID>
   </Icon>
   <Icon>
     <Name>collection-new</Name>
@@ -18,7 +58,7 @@
     <StockIconSet>Basic</StockIconSet>
     <StockOverlayName>new.axvi</StockOverlayName>
     <StockOverlayPos>4</StockOverlayPos>
-    <ResourceIDValue>100</ResourceIDValue>
+    <ResourceIDValue>105</ResourceIDValue>
     <ResourceID>ID_COLLECTION-NEW</ResourceID>
   </Icon>
   <Icon>
@@ -28,7 +68,7 @@
     <StockIconSet>Basic</StockIconSet>
     <StockOverlayName>add.axvi</StockOverlayName>
     <StockOverlayPos>4</StockOverlayPos>
-    <ResourceIDValue>101</ResourceIDValue>
+    <ResourceIDValue>106</ResourceIDValue>
     <ResourceID>ID_SOLUTION-ADD</ResourceID>
   </Icon>
   <Icon>
@@ -38,7 +78,7 @@
     <StockIconSet>Basic</StockIconSet>
     <StockOverlayName>open.axvi</StockOverlayName>
     <StockOverlayPos>4</StockOverlayPos>
-    <ResourceIDValue>102</ResourceIDValue>
+    <ResourceIDValue>107</ResourceIDValue>
     <ResourceID>ID_COLLECTION-OPEN</ResourceID>
   </Icon>
   <Icon>
@@ -48,7 +88,7 @@
     <StockIconSet>Basic</StockIconSet>
     <StockOverlayName></StockOverlayName>
     <StockOverlayPos>32</StockOverlayPos>
-    <ResourceIDValue>103</ResourceIDValue>
+    <ResourceIDValue>108</ResourceIDValue>
     <ResourceID>ID_COLLECTION-SAVE</ResourceID>
   </Icon>
   <Icon>
@@ -58,7 +98,7 @@
     <StockIconSet>Basic</StockIconSet>
     <StockOverlayName>edit.axvi</StockOverlayName>
     <StockOverlayPos>4</StockOverlayPos>
-    <ResourceIDValue>104</ResourceIDValue>
+    <ResourceIDValue>109</ResourceIDValue>
     <ResourceID>ID_COLLECTION-SAVE-AS</ResourceID>
   </Icon>
   <Icon>
@@ -68,7 +108,7 @@
     <StockIconSet>Basic</StockIconSet>
     <StockOverlayName>forbidden.axvi</StockOverlayName>
     <StockOverlayPos>4</StockOverlayPos>
-    <ResourceIDValue>105</ResourceIDValue>
+    <ResourceIDValue>110</ResourceIDValue>
     <ResourceID>ID_APPLICATION-EXIT</ResourceID>
   </Icon>
 </AxialisIconCollection>

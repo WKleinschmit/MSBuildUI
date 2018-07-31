@@ -4,6 +4,35 @@
              xmlns:local="clr-namespace:MSBuildUI"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <Style x:Key="ActiveBorder"
+               TargetType="Border">
+            <Setter Property="Margin"
+                    Value="3 0" />
+            <Setter Property="Padding"
+                    Value="2" />
+            <Setter Property="Background"
+                    Value="Coral" />
+            <Setter Property="BorderThickness"
+                    Value="1" />
+            <Setter Property="BorderBrush"
+                    Value="Coral" />
+            <Setter Property="CornerRadius"
+                    Value="3" />
+        </Style>
+        <Style x:Key="InactiveBorder"
+               TargetType="Border">
+            <Setter Property="Margin"
+                    Value="3 0" />
+            <Setter Property="Padding"
+                    Value="2" />
+            <Setter Property="Background"
+                    Value="Transparent" />
+            <Setter Property="BorderThickness"
+                    Value="1" />
+            <Setter Property="BorderBrush"
+                    Value="Coral" />
+            <Setter Property="CornerRadius"
+                    Value="3" />
+        </Style>
     </Application.Resources>
 </Application>

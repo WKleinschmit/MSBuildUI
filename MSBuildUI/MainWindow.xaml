@@ -9,11 +9,13 @@
                           xmlns:items="clr-namespace:MSBuildUI.Items"
                           xmlns:wpf="clr-namespace:MSBuildUI.wpf"
                           mc:Ignorable="d"
-                          d:DesignWidth="1500"
-                          Title="{Binding Title}">
+                          Title="{Binding Title}"
+                          Closing="MainWindow_OnClosing">
     <igRibbon:XamRibbonWindow.Resources>
         <wpf:BuildStateProgress x:Key="BuildStateProgress" />
         <wpf:BuildStateColor x:Key="BuildStateColor" />
+        <wpf:BoolToBorderStyle x:Key="BoolToBorderStyle" />
+        <wpf:BoolInverter x:Key="BoolInverter" />
     </igRibbon:XamRibbonWindow.Resources>
     <igRibbon:XamRibbonWindow.DataContext>
         <local:MainWindowViewModel />
@@ -22,7 +24,8 @@
         <igRibbon:RibbonWindowContentHost.Ribbon>
             <igRibbon:XamRibbon ApplicationMenuMode="Office2007">
                 <igRibbon:XamRibbon.ApplicationMenu>
-                    <igRibbon:ApplicationMenu RecentItemsHeader="{x:Static local:MainWindowRes.recentFiles}"
+                    <igRibbon:ApplicationMenu x:Name="ApplicationMenu"
+                                              RecentItemsHeader="{x:Static local:MainWindowRes.recentFiles}"
                                               Caption="{x:Static local:MainWindowRes.file}">
                         <igRibbon:ApplicationMenu.FooterToolbar>
                             <igRibbon:ApplicationMenuFooterToolbar>
@@ -52,12 +55,33 @@
                 </igRibbon:XamRibbon.ApplicationMenu>
                 <igRibbon:XamRibbon.Tabs>
                     <igRibbon:RibbonTabItem Header="{x:Static local:MainWindowRes.home}">
-                        <igRibbon:RibbonGroup>
+                        <igRibbon:RibbonGroup Caption="{x:Static local:MainWindowRes.home_Edit}">
                             <igRibbon:ButtonTool Command="{Binding AddSolutionCommand}"
                                                  Content="{x:Static local:MainWindowRes.cmdAddSolution}"
                                                  igRibbon:RibbonGroup.MaximumSize="ImageAndTextLarge"
                                                  LargeImage="img/solution-add@32px.png"
                                                  SmallImage="img/solution-add@16px.png" />
+                        </igRibbon:RibbonGroup>
+                        <igRibbon:RibbonGroup Caption="{x:Static local:MainWindowRes.home_Build}">
+                            <igRibbon:ComboEditorTool ItemsSource="{Binding SolutionCollection.CollectionConfigurations}"
+                                                      SelectedItem="{Binding SolutionCollection.SelectedConfiguration}"
+                                                      Caption="Configuration:"
+                                                      IsEnabled="{Binding IsIdle}" />
+                            <igRibbon:ButtonTool Command="{Binding RunBuildCommand}"
+                                                 igRibbon:RibbonGroup.MaximumSize="ImageAndTextNormal"
+                                                 LargeImage="img/build@32px.png"
+                                                 SmallImage="img/build@16px.png"
+                                                 Content="{x:Static local:MainWindowRes.cmdBuild}" />
+                            <igRibbon:ButtonTool Command="{Binding RunRebuildCommand}"
+                                                 igRibbon:RibbonGroup.MaximumSize="ImageAndTextNormal"
+                                                 LargeImage="img/rebuild@32px.png"
+                                                 SmallImage="img/rebuild@16px.png"
+                                                 Content="{x:Static local:MainWindowRes.cmdRebuild}" />
+                            <igRibbon:ButtonTool Command="{Binding CancelBuildCommand}"
+                                                 igRibbon:RibbonGroup.MaximumSize="ImageAndTextLarge"
+                                                 LargeImage="img/cancel-build@32px.png"
+                                                 SmallImage="img/cancel-build@16px.png"
+                                                 Content="{x:Static local:MainWindowRes.cmdCancelBuild}" />
                         </igRibbon:RibbonGroup>
                     </igRibbon:RibbonTabItem>
                 </igRibbon:XamRibbon.Tabs>
@@ -85,6 +109,7 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
@@ -94,20 +119,24 @@
                             </Grid.RowDefinitions>
                             <CheckBox Grid.Column="0"
                                       Grid.Row="0"
-                                      IsChecked="{Binding IsActive}" 
-                                      VerticalAlignment="Center"/>
+                                      IsChecked="{Binding IsActive}"
+                                      IsEnabled="{Binding CanBeActive}"
+                                      VerticalAlignment="Center"
+                                      Margin="0,2" />
                             <Image Grid.Column="1"
                                    Grid.Row="0"
                                    Source="{Binding Solution.Icon16}"
-                                   Margin="3 0 3 0"
+                                   Margin="3,2,3,1"
                                    VerticalAlignment="Center" />
                             <TextBlock Grid.Column="2"
                                        Grid.Row="0"
                                        FontWeight="Bold"
                                        Text="{Binding Solution.Title}"
-                                       VerticalAlignment="Center" />
+                                       VerticalAlignment="Center"
+                                       Grid.ColumnSpan="2"
+                                       Margin="0,2,0,1" />
                             <ProgressBar Grid.Column="0"
-                                         Grid.ColumnSpan="4"
+                                         Grid.ColumnSpan="5"
                                          Grid.Row="1"
                                          Height="5"
                                          Margin="0 3 0 0"
@@ -120,22 +149,19 @@
                                     </MultiBinding>
                                 </ProgressBar.Foreground>
                             </ProgressBar>
-                            <TextBlock Grid.Column="3"
-                                       Grid.Row="0"
-                                       Margin="3 0"
-                                       Text="{Binding SelectedConfiguration}"/>
+                            <Border Grid.Column="4"
+                                    Grid.Row="0"
+                                    Style="{Binding IsActive, Converter={StaticResource BoolToBorderStyle}}">
+                                <TextBlock FontSize="10"
+                                           Text="{Binding SelectedConfiguration}" />
+                            </Border>
                         </Grid>
                     </DataTemplate>
                 </TabControl.ItemTemplate>
                 <TabControl.ContentTemplate>
                     <DataTemplate DataType="items:SolutionItem">
                         <DockPanel LastChildFill="True">
-                            <ToolBar DockPanel.Dock="Top">
-                                <ComboBox ItemsSource="{Binding Solution.SolutionConfigurationPlatforms}"
-                                          SelectedItem="{Binding SelectedConfiguration}"
-                                          MinWidth="100"/>
-                            </ToolBar>
-                            <FlowDocumentScrollViewer Document="{Binding Flow}"/>
+                            <FlowDocumentScrollViewer Document="{Binding Flow}" />
                         </DockPanel>
                     </DataTemplate>
                 </TabControl.ContentTemplate>

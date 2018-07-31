@@ -120,6 +120,12 @@
   <data name="cmdAddSolution" xml:space="preserve">
     <value>_Add Solution …</value>
   </data>
+  <data name="cmdBuild" xml:space="preserve">
+    <value>Build all</value>
+  </data>
+  <data name="cmdCancelBuild" xml:space="preserve">
+    <value>Cancel build</value>
+  </data>
   <data name="cmdExit" xml:space="preserve">
     <value>E_xit</value>
   </data>
@@ -128,6 +134,9 @@
   </data>
   <data name="cmdOpenCollection" xml:space="preserve">
     <value>_Open …</value>
+  </data>
+  <data name="cmdRebuild" xml:space="preserve">
+    <value>Rebuild all</value>
   </data>
   <data name="cmdSaveCollection" xml:space="preserve">
     <value>_Save</value>
@@ -140,6 +149,12 @@
   </data>
   <data name="home" xml:space="preserve">
     <value>_Home</value>
+  </data>
+  <data name="home_Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="home_Edit" xml:space="preserve">
+    <value>Edit</value>
   </data>
   <data name="recentFiles" xml:space="preserve">
     <value>Recent Solution Collections</value>

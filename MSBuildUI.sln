@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSBuildUI", "MSBuildUI\MSBu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSBuildObjects", "MSBuildObjects\MSBuildObjects.csproj", "{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MSBuildLogging", "MSBuildLogging\MSBuildLogging.csproj", "{0A55BB07-35F3-48B6-9451-C23C3D7E2298}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EB6DD4A4-6A7D-41C8-90FB-874AADB55D91}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0A55BB07-35F3-48B6-9451-C23C3D7E2298}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0A55BB07-35F3-48B6-9451-C23C3D7E2298}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0A55BB07-35F3-48B6-9451-C23C3D7E2298}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0A55BB07-35F3-48B6-9451-C23C3D7E2298}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

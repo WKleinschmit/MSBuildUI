@@ -55,10 +55,6 @@ namespace MSBuildObjects
             @"GlobalSection\((?<Name>[a-z]+)\)\s*=\s*.*",
             RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
-        private static readonly Regex rxValueEqValue = new Regex(
-            @"(?<Value1>\S+)\s*=\s*(?<Value2>\S+)",
-            RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
-
         private static readonly Dictionary<string, MethodInfo> _SectionHandlers = new Dictionary<string, MethodInfo>();
 
         private static bool FindProjectSectionHandler(string name, out MethodInfo methodInfo)
@@ -128,8 +124,8 @@ namespace MSBuildObjects
         private HashSet<string> _SolutionConfigurationPlatforms { get; } = new HashSet<string>();
         public IReadOnlyCollection<string> SolutionConfigurationPlatforms => _SolutionConfigurationPlatforms;
 
-        private HashSet<string> _ProjectConfigurationPlatforms { get; } = new HashSet<string>();
-        public IReadOnlyCollection<string> ProjectConfigurationPlatforms => _ProjectConfigurationPlatforms;
+        private Dictionary<string, string> _ProjectConfigurationPlatforms { get; } = new Dictionary<string, string>();
+        public IReadOnlyDictionary<string, string> ProjectConfigurationPlatforms => _ProjectConfigurationPlatforms;
 
         private Project FindProject(Guid guid)
         {
@@ -149,6 +145,16 @@ namespace MSBuildObjects
             projectFolder = new ProjectFolder(this, guid);
             _SolutionItemsDict.Add(guid, projectFolder);
             return projectFolder;
+        }
+
+        private static void SplitValues(string line, out string value1, out string value2)
+        {
+            int index = line.IndexOf(" = ", StringComparison.InvariantCultureIgnoreCase);
+            if (index == -1)
+                throw new ParseException($"Unexpected line: {line}");
+
+            value1 = line.Substring(0, index);
+            value2 = line.Substring(index + 3);
         }
 
         public static Solution OpenSolution(string filename)
@@ -171,6 +177,27 @@ namespace MSBuildObjects
 
                     throw new ParseException("Solution file header not found.");
                 }
+            }
+
+            foreach (KeyValuePair<Guid, _SolutionItem> valuePair in solution._SolutionItemsDict)
+            {
+                if (!(valuePair.Value is Project project))
+                    continue;
+
+                foreach (Project dependentProject in project.DependentProjects.ToArray())
+                {
+                    if (dependentProject.Name == null)
+                        project.DependentProjects.Remove(dependentProject);
+                }
+            }
+
+            foreach (KeyValuePair<Guid, _SolutionItem> valuePair in solution._SolutionItemsDict.ToArray())
+            {
+                if (!(valuePair.Value is Project project))
+                    continue;
+
+                if (project.Name == null)
+                    solution._SolutionItemsDict.Remove(project.Guid);
             }
 
             solution._SolutionItems.AddRange(solution._SolutionItemsDict.Values.Where(si => si.Parent == null));
@@ -273,11 +300,10 @@ namespace MSBuildObjects
                 if (line == "EndGlobalSection")
                     return;
 
-                Match M = rxValueEqValue.Match(line);
-                if (!M.Success)
-                    throw new ParseException($"Unexpected line: {line}");
+                // ReSharper disable once UnusedVariable
+                SplitValues(line, out string value1, out string value2);
 
-                solution._SolutionConfigurationPlatforms.Add(M.Groups["Value1"].Value);
+                solution._SolutionConfigurationPlatforms.Add(value1);
             }
             throw new ParseException("Unexpected end of file");
         }
@@ -289,11 +315,9 @@ namespace MSBuildObjects
                 if (line == "EndGlobalSection")
                     return;
 
-                Match M = rxValueEqValue.Match(line);
-                if (!M.Success)
-                    throw new ParseException($"Unexpected line: {line}");
+                SplitValues(line, out string value1, out string value2);
 
-                solution._ProjectConfigurationPlatforms.Add($"{M.Groups["Value1"].Value}={M.Groups["Value2"].Value}");
+                solution._ProjectConfigurationPlatforms.Add($"{value1}", $"{value2}");
             }
             throw new ParseException("Unexpected end of file");
         }
@@ -305,11 +329,9 @@ namespace MSBuildObjects
                 if (line == "EndGlobalSection")
                     return;
 
-                Match M = rxValueEqValue.Match(line);
-                if (!M.Success)
-                    throw new ParseException($"Unexpected line: {line}");
+                SplitValues(line, out string value1, out string value2);
 
-                solution._Properties.Add(M.Groups["Value1"].Value, M.Groups["Value2"].Value);
+                solution._Properties.Add(value1, value2);
             }
             throw new ParseException("Unexpected end of file");
         }
@@ -321,12 +343,10 @@ namespace MSBuildObjects
                 if (line == "EndGlobalSection")
                     return;
 
-                Match M = rxValueEqValue.Match(line);
-                if (!M.Success)
-                    throw new ParseException($"Unexpected line: {line}");
+                SplitValues(line, out string value1, out string value2);
 
-                Guid guidChild = new Guid(M.Groups["Value1"].Value);
-                Guid guidParent = new Guid(M.Groups["Value2"].Value);
+                Guid guidChild = new Guid(value1);
+                Guid guidParent = new Guid(value2);
 
                 if (!solution._SolutionItemsDict.TryGetValue(guidChild, out _SolutionItem child))
                     continue;
@@ -347,11 +367,9 @@ namespace MSBuildObjects
                 if (line == "EndGlobalSection")
                     return;
 
-                Match M = rxValueEqValue.Match(line);
-                if (!M.Success)
-                    throw new ParseException($"Unexpected line: {line}");
+                SplitValues(line, out string value1, out string value2);
 
-                solution._Properties.Add(M.Groups["Value1"].Value, M.Groups["Value2"].Value);
+                solution._Properties.Add(value1, value2);
             }
             throw new ParseException("Unexpected end of file");
         }
@@ -430,11 +448,10 @@ namespace MSBuildObjects
                 if (line == "EndProjectSection")
                     return;
 
-                Match M = rxValueEqValue.Match(line);
-                if (!M.Success)
-                    throw new ParseException($"Unexpected line: {line}");
+                // ReSharper disable once UnusedVariable
+                SplitValues(line, out string value1, out string value2);
 
-                project.DependentProjects.Add(solution.FindProject(new Guid(M.Groups["Value1"].Value)));
+                project.DependentProjects.Add(solution.FindProject(new Guid(value1)));
             }
             throw new ParseException("Unexpected end of file");
         }
@@ -449,11 +466,10 @@ namespace MSBuildObjects
                 if (line == "EndProjectSection")
                     return;
 
-                Match M = rxValueEqValue.Match(line);
-                if (!M.Success)
-                    throw new ParseException($"Unexpected line: {line}");
+                // ReSharper disable once UnusedVariable
+                SplitValues(line, out string value1, out string value2);
 
-                projectFolder.AddChild(new SolutionItem(solution, M.Groups["Value1"].Value));
+                projectFolder.AddChild(new SolutionItem(solution, value1));
             }
             throw new ParseException("Unexpected end of file");
         }

@@ -1,7 +1,10 @@
-﻿using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Xml;
 using System.Xml.Linq;
 using MSBuildObjects;
@@ -23,14 +26,40 @@ namespace MSBuildUI.Items
         public string Filename { get; private set; }
         public bool Modified { get; private set; } = false;
 
+        private readonly ObservableCollection<string> _CollectionConfigurations = new ObservableCollection<string>();
+        public IReadOnlyCollection<string> CollectionConfigurations => _CollectionConfigurations;
+
+        public string SelectedConfiguration { get; set; }
+
+        public void OnSelectedConfigurationChanged()
+        {
+            foreach (SolutionItem solutionItem in Solutions)
+            {
+                solutionItem.SelectedConfiguration = SelectedConfiguration;
+                if (solutionItem.Solution.SolutionConfigurationPlatforms.Contains(SelectedConfiguration))
+                {
+                    solutionItem.CanBeActive = true;
+                    solutionItem.BuildState = BuildState.Waiting;
+                }
+                else
+                {
+                    solutionItem.CanBeActive = false;
+                    solutionItem.BuildState = BuildState.Inactive;
+                }
+            }
+
+            Modified = true;
+        }
+
         public void CreateNew()
         {
             Solutions.Clear();
             Title = string.Format(R.solutionCollection, ++counter);
             Filename = null;
+            Modified = false;
         }
 
-        public void OpenExisting(string filename)
+        public void OpenExisting(ref string filename)
         {
             if (filename == null)
             {
@@ -64,6 +93,9 @@ namespace MSBuildUI.Items
                 solutionItem.IsActive = bool.Parse(eltSolution.Attribute("isActive")?.Value ?? "true");
                 solutionItem.SelectedConfiguration = eltSolution.Attribute("selectedConfiguration")?.Value;
             }
+
+            SelectedConfiguration = eltSolutionCollection.Attribute("configuration")?.Value;
+            Modified = false;
         }
 
         public bool Save()
@@ -73,7 +105,8 @@ namespace MSBuildUI.Items
 
             XDocument doc = new XDocument();
 
-            XElement eltSolutionCollection = new XElement("SolutionCollection");
+            XElement eltSolutionCollection = new XElement("SolutionCollection",
+                new XAttribute("configuration", SelectedConfiguration));
             doc.Add(eltSolutionCollection);
 
             foreach (SolutionItem solutionItem in Solutions)
@@ -84,6 +117,7 @@ namespace MSBuildUI.Items
             using (XmlWriter xmlWriter = XmlWriter.Create(Filename, new XmlWriterSettings { Indent = true }))
                 doc.WriteTo(xmlWriter);
 
+            Modified = false;
             return true;
         }
 
@@ -123,6 +157,17 @@ namespace MSBuildUI.Items
         {
             SolutionItem solutionItem = new SolutionItem(solution);
             Solutions.Add(solutionItem);
+            Modified = true;
+
+            foreach (string configuration in solutionItem.Solution.SolutionConfigurationPlatforms)
+            {
+               if (!_CollectionConfigurations.Contains(configuration))
+                   _CollectionConfigurations.Add(configuration);
+            }
+
+            if (SelectedConfiguration == null)
+                SelectedConfiguration = _CollectionConfigurations.FirstOrDefault();
+
             return solutionItem;
         }
     }

@@ -1,17 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Infragistics.Windows.DockManager;
 using MSBuildObjects;
-using MSBuildUI.Items;
-using MSBuildUI.wpf;
 using Ookii.Dialogs.Wpf;
 using R = MSBuildUI.Properties.Resources;
-using SolutionItem = MSBuildUI.Items.SolutionItem;
 
 namespace MSBuildUI
 {
@@ -23,15 +16,36 @@ namespace MSBuildUI
         public ICommand SaveCollectionCommand { get; private set; }
         public ICommand SaveCollectionAsCommand { get; private set; }
         public ICommand AddSolutionCommand { get; private set; }
+        public ICommand RunBuildCommand { get; private set; }
+        public ICommand RunRebuildCommand { get; private set; }
+        public ICommand CancelBuildCommand { get; private set; }
 
         private void InitCommands()
         {
-            ExitCommand = new RelayCommand(OnExit, _ => true);
-            NewCollectionCommand = new RelayCommand(OnNewCollection, _ => SolutionCollection.Filename != null);
-            OpenCollectionCommand = new RelayCommand(OnOpenCollection);
+            ExitCommand = new RelayCommand(OnExit, _ => IsIdle);
+            NewCollectionCommand = new RelayCommand(OnNewCollection, _ => SolutionCollection.Filename != null && IsIdle);
+            OpenCollectionCommand = new RelayCommand(OnOpenCollection, _ => IsIdle);
             SaveCollectionCommand = new RelayCommand(OnSaveCollection);
             SaveCollectionAsCommand = new RelayCommand(OnSaveCollectionAs);
-            AddSolutionCommand = new RelayCommand(OnAddSolution);
+            AddSolutionCommand = new RelayCommand(OnAddSolution, _ => IsIdle);
+            RunBuildCommand = new RelayCommand(OnRunBuild, _ => IsIdle && SolutionCollection.Solutions.Any(s => s.IsActive));
+            RunRebuildCommand = new RelayCommand(OnRunRebuild, _ => IsIdle && SolutionCollection.Solutions.Any(s => s.IsActive));
+            CancelBuildCommand = new RelayCommand(OnCancelBuild, _ => !IsIdle);
+        }
+
+        private void OnCancelBuild(object obj)
+        {
+            
+        }
+
+        private void OnRunBuild(object obj)
+        {
+            RunBuild("Build");
+        }
+
+        private void OnRunRebuild(object obj)
+        {
+            RunBuild("Rebuild");
         }
 
         private void OnAddSolution(object obj)
@@ -61,7 +75,9 @@ namespace MSBuildUI
             if (!PromptModified())
                 return;
 
-            SolutionCollection.OpenExisting(null);
+            string filename = obj as string;
+            SolutionCollection.OpenExisting(ref filename);
+            AddRecentFile(filename);
         }
 
         private void OnNewCollection(object obj)
@@ -81,7 +97,7 @@ namespace MSBuildUI
             _mainWindow?.Close();
         }
 
-        private bool PromptModified()
+        public bool PromptModified()
         {
             if (!SolutionCollection.Modified)
                 return true;
