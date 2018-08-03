@@ -1,14 +1,17 @@
 ﻿using System;
-using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
+using System.IO.Pipes;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Infragistics.Windows.Ribbon;
+using Microsoft.Build.Framework;
+using MSBuildLogging;
 using MSBuildUI.Annotations;
 using MSBuildUI.Items;
 using MSBuildUI.Properties;
@@ -18,15 +21,13 @@ namespace MSBuildUI
 {
     public partial class MainWindowViewModel : INotifyPropertyChanged
     {
+        internal const int FileFormatVersion = 7;
         private MainWindow _mainWindow;
         private static readonly ImageSource Coll16 = new BitmapImage(new Uri("pack://application:,,,/MSBuildUI;component/img/collection@16px.png"));
         private static readonly ImageSource Coll32 = new BitmapImage(new Uri("pack://application:,,,/MSBuildUI;component/img/collection@32px.png"));
-        private static readonly string vswherePath;
 
         static MainWindowViewModel()
         {
-            vswherePath = Path.GetDirectoryName(Path.GetFullPath(typeof(MainWindowViewModel).Assembly.Location));
-            vswherePath = Path.Combine(vswherePath ?? @".\", "vswhere.exe");
         }
 
         public MainWindowViewModel()
@@ -126,6 +127,9 @@ namespace MSBuildUI
             string[] parts = solutionItem.SelectedConfiguration.Split("|".ToCharArray(), 2, StringSplitOptions.RemoveEmptyEntries);
             string pipeName = Guid.NewGuid().ToString("N");
 
+            NamedPipeServerStream npServerStream = new NamedPipeServerStream(pipeName, PipeDirection.In, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            npServerStream.BeginWaitForConnection(ConnectionIncomming, new Tuple<NamedPipeServerStream, SolutionItem>(npServerStream, solutionItem));
+
             using (new PushDir(solutionItem.Solution.Directory))
             {
                 string tempFileName = Path.GetTempFileName();
@@ -137,7 +141,7 @@ namespace MSBuildUI
                     {
                         textWriter.WriteLine($@"@echo off
 
-set VSWHERE=""{vswherePath}""
+set VSWHERE=""%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe""
 for /f ""usebackq tokens=1,* delims=: "" %%a in (`%VSWHERE% -legacy -latest`) do set ""%%a=%%b""
 
 if exist ""%installationPath%\Common7\Tools\vsdevcmd.bat"" (
@@ -153,23 +157,36 @@ if exist ""%installationPath%\Common7\Tools\vsdevcmd.bat"" (
     exit /B 1
 )
 
-msbuild /nologo /n ^
+msbuild /nologo /m ^
     ""/target:{target}"" ^
     ""/property:Configuration={parts[0]}"" ^
     ""/property:Platform={parts[1]}"" ^
-    ""/logger:RemoteLogger,MSBuildLogging;PipeName={pipeName}"" ^
+    ""/logger:RemoteLogger,{typeof(RemoteLogger).Assembly.Location};PipeName={pipeName}"" ^
     ""{Path.GetFileName(solutionItem.Solution.Filename)}""
 ");
                     }
 
-                    ProcessStartInfo psi = new ProcessStartInfo("cmd.exe")
+                    ProcessStartInfo psi = new ProcessStartInfo(tempFileName)
                     {
-                        Arguments = $"/C call \"{tempFileName}\"",
                         UseShellExecute = false,
+                        WorkingDirectory = solutionItem.Solution.Directory,
+                        RedirectStandardError = true,
+                        RedirectStandardOutput = true,
                         CreateNoWindow = true,
-                    };
+                };
 
-                    Process.Start(psi)?.Dispose();
+                    using (Process P = Process.Start(psi))
+                    {
+                        if (P == null)
+                            return;
+
+                        P.ErrorDataReceived += (sender, args) => Trace.WriteLine(args.Data);
+                        P.BeginErrorReadLine();
+                        P.OutputDataReceived += (sender, args) => Trace.WriteLine(args.Data);
+                        P.BeginOutputReadLine();
+
+                        P.WaitForExit();
+                    }
 
                 }
                 finally
@@ -178,6 +195,37 @@ msbuild /nologo /n ^
                         File.Delete(tempFileName);
                 }
             }
+        }
+
+        private void ConnectionIncomming(IAsyncResult ar)
+        {
+            if (!(ar.AsyncState is Tuple<NamedPipeServerStream, SolutionItem> tuple))
+                return;
+
+            NamedPipeServerStream npServerStream = tuple.Item1;
+            SolutionItem solutionItem = tuple.Item2;
+
+            npServerStream.EndWaitForConnection(ar);
+            GZipStream gzipStream = new GZipStream(npServerStream, CompressionMode.Decompress, leaveOpen: true);
+            BinaryReader binaryReader = new BinaryReader(gzipStream);
+
+            int fileFormatVersion = binaryReader.ReadInt32();
+            if (fileFormatVersion > FileFormatVersion)
+            {
+                throw new NotSupportedException($"Unsupported log file format {fileFormatVersion}/{FileFormatVersion}");
+            }
+            
+            BuildEventArgsReader reader = new BuildEventArgsReader(binaryReader, fileFormatVersion);
+            while (true)
+            {
+                BuildEventArgs instance = null;
+
+                instance = reader.Read();
+                if (instance == null)
+                {
+                }
+            }
+
         }
 
         public void SaveSettings()

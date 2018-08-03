@@ -18,7 +18,6 @@ namespace MSBuildLogging
 
         public RemoteLogger()
         {
-            Debugger.Launch();
         }
 
         public void Initialize(IEventSource eventSource)
@@ -28,8 +27,8 @@ namespace MSBuildLogging
 
             try
             {
-                pipeSstream = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.None);
-                pipeSstream.Connect(2000);
+                pipeSstream = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
+                pipeSstream.Connect();
             }
             catch (Exception e)
             {
@@ -37,7 +36,6 @@ namespace MSBuildLogging
             }
 
             stream = new GZipStream(pipeSstream, CompressionLevel.Optimal);
-            pipeSstream.Connect();
             binaryWriter = new BinaryWriter(stream);
             eventArgsWriter = new BuildEventArgsWriter(binaryWriter);
 
