@@ -10,6 +10,7 @@
                           xmlns:wpf="clr-namespace:MSBuildUI.wpf"
                           mc:Ignorable="d"
                           Title="{Binding Title}"
+                          Icon="MSBuildUI.ico"
                           Closing="MainWindow_OnClosing">
     <igRibbon:XamRibbonWindow.Resources>
         <wpf:BuildStateProgress x:Key="BuildStateProgress" />
@@ -98,7 +99,8 @@
                                         AllowFloatingOnly="False"
                                         Header="Output"
                                         CloseButtonVisibility="Collapsed"
-                                        Image="img/output@16px.png">
+                                        Image="img/output@16px.png"
+                                        x:Name="OutputPane">
                     </igDock:ContentPane>
                 </igDock:SplitPane>
             </igDock:XamDockManager.Panes>

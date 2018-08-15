@@ -33,5 +33,29 @@ namespace MSBuildUI.Properties {
                 this["MRU"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Layout {
+            get {
+                return ((string)(this["Layout"]));
+            }
+            set {
+                this["Layout"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string Docking {
+            get {
+                return ((string)(this["Docking"]));
+            }
+            set {
+                this["Docking"] = value;
+            }
+        }
     }
 }

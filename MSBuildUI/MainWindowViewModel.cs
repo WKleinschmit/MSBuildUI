@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -6,9 +7,14 @@ using System.IO;
 using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Xml;
+using System.Xml.Linq;
 using Infragistics.Windows.Ribbon;
 using Microsoft.Build.Framework;
 using MSBuildLogging;
@@ -105,7 +111,7 @@ namespace MSBuildUI
 
         #endregion
 
-        private void RunBuild(string target)
+        private async Task RunBuild(string target)
         {
             try
             {
@@ -113,7 +119,7 @@ namespace MSBuildUI
                 foreach (SolutionItem solutionItem in SolutionCollection.Solutions)
                 {
                     if (solutionItem.IsActive)
-                        BuildSolution(solutionItem, target);
+                        await BuildSolution(solutionItem, target);
                 }
             }
             finally
@@ -122,7 +128,7 @@ namespace MSBuildUI
             }
         }
 
-        private void BuildSolution(SolutionItem solutionItem, string target)
+        private async Task BuildSolution(SolutionItem solutionItem, string target)
         {
             string[] parts = solutionItem.SelectedConfiguration.Split("|".ToCharArray(), 2, StringSplitOptions.RemoveEmptyEntries);
             string pipeName = Guid.NewGuid().ToString("N");
@@ -157,7 +163,7 @@ if exist ""%installationPath%\Common7\Tools\vsdevcmd.bat"" (
     exit /B 1
 )
 
-msbuild /nologo /m ^
+msbuild /nologo /noconsolelogger /m ^
     ""/target:{target}"" ^
     ""/property:Configuration={parts[0]}"" ^
     ""/property:Platform={parts[1]}"" ^
@@ -173,7 +179,7 @@ msbuild /nologo /m ^
                         RedirectStandardError = true,
                         RedirectStandardOutput = true,
                         CreateNoWindow = true,
-                };
+                    };
 
                     using (Process P = Process.Start(psi))
                     {
@@ -185,7 +191,7 @@ msbuild /nologo /m ^
                         P.OutputDataReceived += (sender, args) => Trace.WriteLine(args.Data);
                         P.BeginOutputReadLine();
 
-                        P.WaitForExit();
+                        await Task.Run(() => P.WaitForExit());
                     }
 
                 }
@@ -197,15 +203,33 @@ msbuild /nologo /m ^
             }
         }
 
+        private static readonly Dictionary<string, MethodInfo> EventHandlers = new Dictionary<string, MethodInfo>();
+
         private void ConnectionIncomming(IAsyncResult ar)
         {
             if (!(ar.AsyncState is Tuple<NamedPipeServerStream, SolutionItem> tuple))
                 return;
 
+            Thread readerThread = new Thread(ReaderThread)
+            {
+                IsBackground = true,
+                Name = "Reader"
+            };
+
+            NamedPipeServerStream npServerStream = tuple.Item1;
+            npServerStream.EndWaitForConnection(ar);
+
+            readerThread.Start(tuple);
+        }
+
+        private void ReaderThread(object obj)
+        {
+            if (!(obj is Tuple<NamedPipeServerStream, SolutionItem> tuple))
+                return;
+
             NamedPipeServerStream npServerStream = tuple.Item1;
             SolutionItem solutionItem = tuple.Item2;
 
-            npServerStream.EndWaitForConnection(ar);
             GZipStream gzipStream = new GZipStream(npServerStream, CompressionMode.Decompress, leaveOpen: true);
             BinaryReader binaryReader = new BinaryReader(gzipStream);
 
@@ -214,19 +238,96 @@ msbuild /nologo /m ^
             {
                 throw new NotSupportedException($"Unsupported log file format {fileFormatVersion}/{FileFormatVersion}");
             }
-            
+
             BuildEventArgsReader reader = new BuildEventArgsReader(binaryReader, fileFormatVersion);
             while (true)
             {
-                BuildEventArgs instance = null;
-
-                instance = reader.Read();
+                BuildEventArgs instance = reader.Read();
                 if (instance == null)
+                    break;
+
+                Type instanceType = instance.GetType();
+                string instanceTypeName = instanceType.Name;
+                if (!instanceTypeName.EndsWith("EventArgs"))
                 {
+                    Trace.WriteLine($"Invalid build event: {instance}");
+                    continue;
                 }
+
+                string handlerName = $"On{instanceTypeName.Substring(0, instanceTypeName.Length - 9)}";
+                if (!EventHandlers.TryGetValue(handlerName, out MethodInfo handler))
+                {
+                    handler = EventHandlers[handlerName] = GetType().GetMethod(
+                        handlerName, BindingFlags.Instance | BindingFlags.Public, null,
+                        new[] { typeof(SolutionItem), instanceType }, null);
+                    if (handler == null)
+                        Trace.WriteLine($"#Missing handler: public void {handlerName}(SolutionItem solutionItem, {instanceTypeName} e)");
+                }
+
+                if (handler != null)
+                    handler.Invoke(this, new object[] { solutionItem, instance });
             }
 
+            binaryReader.Close();
+            gzipStream.Close();
         }
+
+        public void OnBuildStarted(SolutionItem solutionItem, BuildStartedEventArgs e) { }
+        public void OnBuildFinished(SolutionItem solutionItem, BuildFinishedEventArgs e) { }
+
+        public void OnProjectEvaluationStarted(SolutionItem solutionItem, ProjectEvaluationStartedEventArgs e) { }
+        public void OnProjectEvaluationFinished(SolutionItem solutionItem, ProjectEvaluationFinishedEventArgs e) { }
+
+        public void OnProjectStarted(SolutionItem solutionItem, ProjectStartedEventArgs e)
+        {
+            string projectFile = e.ProjectFile;
+            if (projectFile.EndsWith(".metaproj", StringComparison.OrdinalIgnoreCase))
+                projectFile = projectFile.Substring(0, projectFile.Length - 9);
+
+            if (projectFile.EndsWith(".sln", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            IEnumerable<ProjectItem> projectItems = from project in solutionItem.ProjectItems
+                where project.Project.Path.Equals(projectFile, StringComparison.InvariantCultureIgnoreCase)
+                select project;
+            ProjectItem projectItem = projectItems.FirstOrDefault();
+            if (projectItem == null)
+                return;
+
+            projectItem.BuildState = BuildState.Success | BuildState.InProgress;
+        }
+        public void OnProjectFinished(SolutionItem solutionItem, ProjectFinishedEventArgs e)
+        {
+            string projectFile = e.ProjectFile;
+            if (projectFile.EndsWith(".metaproj", StringComparison.OrdinalIgnoreCase))
+                projectFile = projectFile.Substring(0, projectFile.Length - 9);
+
+            if (projectFile.EndsWith(".sln", StringComparison.OrdinalIgnoreCase))
+                return;
+
+            IEnumerable<ProjectItem> projectItems = from project in solutionItem.ProjectItems
+                where project.Project.Path.Equals(projectFile, StringComparison.InvariantCultureIgnoreCase)
+                select project;
+            ProjectItem projectItem = projectItems.FirstOrDefault();
+            if (projectItem == null)
+                return;
+
+            projectItem.BuildState &= ~BuildState.InProgress;
+        }
+
+        public void OnTargetStarted(SolutionItem solutionItem, TargetStartedEventArgs e) { }
+        public void OnTargetFinished(SolutionItem solutionItem, TargetFinishedEventArgs e) { }
+
+        public void OnTaskStarted(SolutionItem solutionItem, TaskStartedEventArgs e) { }
+        public void OnTaskFinished(SolutionItem solutionItem, TaskFinishedEventArgs e) { }
+        public void OnTargetSkipped(SolutionItem solutionItem, TargetSkippedEventArgs e) { }
+
+        public void OnTaskCommandLine(SolutionItem solutionItem, TaskCommandLineEventArgs e) { }
+
+        public void OnBuildMessage(SolutionItem solutionItem, BuildMessageEventArgs e) { }
+        public void OnBuildWarning(SolutionItem solutionItem, BuildWarningEventArgs e) { }
+        public void OnBuildError(SolutionItem solutionItem, BuildErrorEventArgs e) { }
+
 
         public void SaveSettings()
         {

@@ -38,14 +38,14 @@ namespace MSBuildUI
             
         }
 
-        private void OnRunBuild(object obj)
+        private async void OnRunBuild(object obj)
         {
-            RunBuild("Build");
+            await RunBuild("Build");
         }
 
-        private void OnRunRebuild(object obj)
+        private async void OnRunRebuild(object obj)
         {
-            RunBuild("Rebuild");
+            await RunBuild("Rebuild");
         }
 
         private void OnAddSolution(object obj)
