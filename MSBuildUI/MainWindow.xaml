@@ -101,6 +101,25 @@
                                         CloseButtonVisibility="Collapsed"
                                         Image="img/output@16px.png"
                                         x:Name="OutputPane">
+                        <TabControl ItemsSource="{Binding MessageSinks}">
+                            <TabControl.ItemTemplate>
+                                <DataTemplate DataType="items:MessageSink">
+                                    <TextBlock Text="{Binding Title}"/>
+                                </DataTemplate>
+                            </TabControl.ItemTemplate>
+                            <TabControl.ContentTemplate>
+                                <DataTemplate DataType="items:MessageSink">
+                                    <ListBox ItemsSource="{Binding Messages}">
+                                        <ListBox.ItemTemplate>
+                                            <DataTemplate DataType="items:Message">
+                                                <TextBlock Text="{Binding FirstLine}"
+                                                           ToolTip="{Binding BuildEventArgs.Message}"/>
+                                            </DataTemplate>
+                                        </ListBox.ItemTemplate>
+                                    </ListBox>
+                                </DataTemplate>
+                            </TabControl.ContentTemplate>
+                        </TabControl>
                     </igDock:ContentPane>
                 </igDock:SplitPane>
             </igDock:XamDockManager.Panes>

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -11,6 +12,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Xml;
@@ -272,14 +274,30 @@ msbuild /nologo /noconsolelogger /m ^
             gzipStream.Close();
         }
 
-        public void OnBuildStarted(SolutionItem solutionItem, BuildStartedEventArgs e) { }
-        public void OnBuildFinished(SolutionItem solutionItem, BuildFinishedEventArgs e) { }
-
-        public void OnProjectEvaluationStarted(SolutionItem solutionItem, ProjectEvaluationStartedEventArgs e) { }
-        public void OnProjectEvaluationFinished(SolutionItem solutionItem, ProjectEvaluationFinishedEventArgs e) { }
-
-        public void OnProjectStarted(SolutionItem solutionItem, ProjectStartedEventArgs e)
+        public async void OnBuildStarted(SolutionItem solutionItem, BuildStartedEventArgs e)
         {
+            await Application.Current.Dispatcher.InvokeAsync(() => MessageSinks.Add(new MessageSink {Title = e.Message}));
+            await MessageSinks[0].AddMessage(e);
+        }
+        public async void OnBuildFinished(SolutionItem solutionItem, BuildFinishedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+
+        public async void OnProjectEvaluationStarted(SolutionItem solutionItem, ProjectEvaluationStartedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+
+        public async void OnProjectEvaluationFinished(SolutionItem solutionItem, ProjectEvaluationFinishedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+
+        public async void OnProjectStarted(SolutionItem solutionItem, ProjectStartedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+
             string projectFile = e.ProjectFile;
             if (projectFile.EndsWith(".metaproj", StringComparison.OrdinalIgnoreCase))
                 projectFile = projectFile.Substring(0, projectFile.Length - 9);
@@ -296,8 +314,10 @@ msbuild /nologo /noconsolelogger /m ^
 
             projectItem.BuildState = BuildState.Success | BuildState.InProgress;
         }
-        public void OnProjectFinished(SolutionItem solutionItem, ProjectFinishedEventArgs e)
+        public async void OnProjectFinished(SolutionItem solutionItem, ProjectFinishedEventArgs e)
         {
+            await MessageSinks[0].AddMessage(e);
+
             string projectFile = e.ProjectFile;
             if (projectFile.EndsWith(".metaproj", StringComparison.OrdinalIgnoreCase))
                 projectFile = projectFile.Substring(0, projectFile.Length - 9);
@@ -315,18 +335,47 @@ msbuild /nologo /noconsolelogger /m ^
             projectItem.BuildState &= ~BuildState.InProgress;
         }
 
-        public void OnTargetStarted(SolutionItem solutionItem, TargetStartedEventArgs e) { }
-        public void OnTargetFinished(SolutionItem solutionItem, TargetFinishedEventArgs e) { }
+        public async void OnTargetStarted(SolutionItem solutionItem, TargetStartedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+        public async void OnTargetFinished(SolutionItem solutionItem, TargetFinishedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
 
-        public void OnTaskStarted(SolutionItem solutionItem, TaskStartedEventArgs e) { }
-        public void OnTaskFinished(SolutionItem solutionItem, TaskFinishedEventArgs e) { }
-        public void OnTargetSkipped(SolutionItem solutionItem, TargetSkippedEventArgs e) { }
+        public async void OnTaskStarted(SolutionItem solutionItem, TaskStartedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+        public async void OnTaskFinished(SolutionItem solutionItem, TaskFinishedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+        public async void OnTargetSkipped(SolutionItem solutionItem, TargetSkippedEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
 
-        public void OnTaskCommandLine(SolutionItem solutionItem, TaskCommandLineEventArgs e) { }
+        public async void OnTaskCommandLine(SolutionItem solutionItem, TaskCommandLineEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
 
-        public void OnBuildMessage(SolutionItem solutionItem, BuildMessageEventArgs e) { }
-        public void OnBuildWarning(SolutionItem solutionItem, BuildWarningEventArgs e) { }
-        public void OnBuildError(SolutionItem solutionItem, BuildErrorEventArgs e) { }
+        public async void OnBuildMessage(SolutionItem solutionItem, BuildMessageEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+        public async void OnBuildWarning(SolutionItem solutionItem, BuildWarningEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+        public async void OnBuildError(SolutionItem solutionItem, BuildErrorEventArgs e)
+        {
+            await MessageSinks[0].AddMessage(e);
+        }
+
+        public ObservableCollection<MessageSink> MessageSinks { get; } = new ObservableCollection<MessageSink>();
 
 
         public void SaveSettings()

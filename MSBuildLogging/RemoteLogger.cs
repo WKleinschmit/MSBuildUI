@@ -11,6 +11,7 @@ namespace MSBuildLogging
     {
         internal const int FileFormatVersion = 7;
 
+        NamedPipeClientStream pipeSstream;
         private Stream stream;
         private BinaryWriter binaryWriter;
         private BuildEventArgsWriter eventArgsWriter;
@@ -23,7 +24,6 @@ namespace MSBuildLogging
         public void Initialize(IEventSource eventSource)
         {
             ProcessParameters();
-            NamedPipeClientStream pipeSstream;
 
             try
             {
@@ -53,8 +53,6 @@ namespace MSBuildLogging
             // so add an explicit 0 at the end to signify end of file
             stream.WriteByte((byte)BinaryLogRecordKind.EndOfFile);
             stream.Flush();
-            stream.Dispose();
-            stream = null;
         }
 
         public LoggerVerbosity Verbosity { get; set; } = LoggerVerbosity.Diagnostic;

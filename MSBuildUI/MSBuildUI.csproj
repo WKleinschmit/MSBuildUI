@@ -76,6 +76,8 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Items\BuildState.cs" />
+    <Compile Include="Items\Message.cs" />
+    <Compile Include="Items\MessageSink.cs" />
     <Compile Include="Items\ProjectItem.cs" />
     <Compile Include="Items\SolutionCollection.cs" />
     <Compile Include="Extensions.cs" />
