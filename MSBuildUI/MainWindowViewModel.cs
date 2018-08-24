@@ -232,7 +232,7 @@ msbuild /nologo /noconsolelogger /m ^
             NamedPipeServerStream npServerStream = tuple.Item1;
             SolutionItem solutionItem = tuple.Item2;
 
-            GZipStream gzipStream = new GZipStream(npServerStream, CompressionMode.Decompress, leaveOpen: true);
+            GZipStream gzipStream = new GZipStream(npServerStream, CompressionMode.Decompress);
             BinaryReader binaryReader = new BinaryReader(gzipStream);
 
             int fileFormatVersion = binaryReader.ReadInt32();
@@ -269,14 +269,11 @@ msbuild /nologo /noconsolelogger /m ^
                 if (handler != null)
                     handler.Invoke(this, new object[] { solutionItem, instance });
             }
-
-            binaryReader.Close();
-            gzipStream.Close();
         }
 
         public async void OnBuildStarted(SolutionItem solutionItem, BuildStartedEventArgs e)
         {
-            await Application.Current.Dispatcher.InvokeAsync(() => MessageSinks.Add(new MessageSink {Title = e.Message}));
+            await Application.Current.Dispatcher.InvokeAsync(() => MessageSinks.Add(new MessageSink {Title = solutionItem.Solution.Title}));
             await MessageSinks[0].AddMessage(e);
         }
         public async void OnBuildFinished(SolutionItem solutionItem, BuildFinishedEventArgs e)

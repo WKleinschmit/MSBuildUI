@@ -11,7 +11,7 @@ namespace MSBuildLogging
     {
         internal const int FileFormatVersion = 7;
 
-        NamedPipeClientStream pipeSstream;
+        NamedPipeClientStream pipeStream;
         private Stream stream;
         private BinaryWriter binaryWriter;
         private BuildEventArgsWriter eventArgsWriter;
@@ -19,6 +19,7 @@ namespace MSBuildLogging
 
         public RemoteLogger()
         {
+            Debugger.Launch();
         }
 
         public void Initialize(IEventSource eventSource)
@@ -27,15 +28,15 @@ namespace MSBuildLogging
 
             try
             {
-                pipeSstream = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
-                pipeSstream.Connect();
+                pipeStream = new NamedPipeClientStream(".", pipeName, PipeDirection.Out, PipeOptions.Asynchronous);
+                pipeStream.Connect();
             }
             catch (Exception e)
             {
                 throw new LoggerException(e.ToString());
             }
 
-            stream = new GZipStream(pipeSstream, CompressionLevel.Optimal);
+            stream = new GZipStream(pipeStream, CompressionLevel.Optimal);
             binaryWriter = new BinaryWriter(stream);
             eventArgsWriter = new BuildEventArgsWriter(binaryWriter);
 
@@ -53,6 +54,11 @@ namespace MSBuildLogging
             // so add an explicit 0 at the end to signify end of file
             stream.WriteByte((byte)BinaryLogRecordKind.EndOfFile);
             stream.Flush();
+            stream.Dispose();
+            stream = null;
+            pipeStream.Flush();
+            pipeStream.Dispose();
+            pipeStream = null;
         }
 
         public LoggerVerbosity Verbosity { get; set; } = LoggerVerbosity.Diagnostic;
